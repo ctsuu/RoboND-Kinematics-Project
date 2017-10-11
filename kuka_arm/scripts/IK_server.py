@@ -159,9 +159,14 @@ def handle_calculate_IK(req):
         #R3_6 = R0_3.inv("LU")*Rrpy # using transpose instead:
         R3_6 = R0_3.T * Rrpy
 
-        theta4 = atan2(R3_6[2,2], -R3_6[0,2])
         theta5 = atan2(sqrt(R3_6[0,2]**2 + R3_6[2,2]**2), R3_6[1,2])
-        theta6 = atan2(-R3_6[1,1], R3_6[1,0])
+        # Choosing between multiple possible solutions:
+        if sin(theta5) < 0:
+            theta4 = atan2(-R3_6[2,2], R3_6[0,2])
+            theta6 = atan2(R3_6[1,1], -R3_6[1,0])
+        else:
+            theta4 = atan2(R3_6[2,2], -R3_6[0,2])
+            theta6 = atan2(-R3_6[1,1], R3_6[1,0])
 
         print 'Appending calculated values'
             # Populate response for the IK request
