@@ -112,64 +112,64 @@ def handle_calculate_IK(req):
                     req.poses[x].orientation.z, req.poses[x].orientation.w])
 
             ### Your IK code here
-        # Compensate for rotation discrepancy between DH parameters and Gazebo
-        print 'Processing pose: ' + str(x)
-        R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)
-        Rrpy = R_z * R_y * R_x * R_corr
-        Rrpy = Rrpy.subs({'r': roll, 'p': pitch, 'y': yaw})
+            # Compensate for rotation discrepancy between DH parameters and Gazebo
+            print 'Processing pose: ' + str(x)
+            R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)
+            Rrpy = R_z * R_y * R_x * R_corr
+            Rrpy = Rrpy.subs({'r': roll, 'p': pitch, 'y': yaw})
 
-        # Calculate joint angles using Geometric IK method
-        # Calculate the wrist center position first
-        print 'Calculating wrist center'
-        nx = Rrpy[0,2]
-        ny = Rrpy[1,2]
-        nz = Rrpy[2,2]
+            # Calculate joint angles using Geometric IK method
+            # Calculate the wrist center position first
+            print 'Calculating wrist center'
+            nx = Rrpy[0,2]
+            ny = Rrpy[1,2]
+            nz = Rrpy[2,2]
 
-        # d7 = 0.303
-        wx =  px - 0.303 * nx
-        wy =  py - 0.303 * ny
-        wz =  pz - 0.303 * nz
+            # d7 = 0.303
+            wx =  px - 0.303 * nx
+            wy =  py - 0.303 * ny
+            wz =  pz - 0.303 * nz
 
-        print 'Calculating position angles'
-        # Theta 1 from above is a simple atan2
-        theta1 = atan2(wy, wx)
-        # Calculate Radius from above
-        r = sqrt(wx**2+wy**2) - 0.35 # a1: 0.35
+            print 'Calculating position angles'
+            # Theta 1 from above is a simple atan2
+            theta1 = atan2(wy, wx)
+            # Calculate Radius from above
+            r = sqrt(wx**2+wy**2) - 0.35 # a1: 0.35
 
-        # Calculating Theta 2 and 3 using cosine law. A, B and C are sides of the triangle
-        A = 1.501
-        B = sqrt(r**2+(wz-0.75)**2) # d1: 0.75
-        C = 1.25
+            # Calculating Theta 2 and 3 using cosine law. A, B and C are sides of the triangle
+            A = 1.501
+            B = sqrt(r**2+(wz-0.75)**2) # d1: 0.75
+            C = 1.25
 
-        # a corresponds to angle apha
-        a = acos((B**2 + C**2 - A**2) / (2*B*C))
-        theta2 = pi/2 - a - atan2(wz-0.75, r)  # d1: 0.75
+            # a corresponds to angle apha
+            a = acos((B**2 + C**2 - A**2) / (2*B*C))
+            theta2 = pi/2 - a - atan2(wz-0.75, r)  # d1: 0.75
 
-        # b corresponds to angle beta
-        b = acos((A**2 + C**2 - B**2) / (2*A*C))
-        theta3 = pi/2 - (b + 0.036)
+            # b corresponds to angle beta
+            b = acos((A**2 + C**2 - B**2) / (2*A*C))
+            theta3 = pi/2 - (b + 0.036)
 
-        print 'Calculating orientation angles'
-        # Calculating Euler angles from orientation
-        R0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
-        R0_3 = R0_3.evalf(subs={'q1':theta1, 'q2':theta2, 'q3':theta3})
-        #R3_6 = R0_3.inv("LU")*Rrpy # using transpose instead:
-        R3_6 = R0_3.T * Rrpy
+            print 'Calculating orientation angles'
+            # Calculating Euler angles from orientation
+            R0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
+            R0_3 = R0_3.evalf(subs={'q1':theta1, 'q2':theta2, 'q3':theta3})
+            #R3_6 = R0_3.inv("LU")*Rrpy # using transpose instead:
+            R3_6 = R0_3.T * Rrpy
 
-        theta5 = atan2(sqrt(R3_6[0,2]**2 + R3_6[2,2]**2), R3_6[1,2])
-        # Choosing between multiple possible solutions:
-        if sin(theta5) < 0:
-            theta4 = atan2(-R3_6[2,2], R3_6[0,2])
-            theta6 = atan2(R3_6[1,1], -R3_6[1,0])
-        else:
-            theta4 = atan2(R3_6[2,2], -R3_6[0,2])
-            theta6 = atan2(-R3_6[1,1], R3_6[1,0])
+            theta5 = atan2(sqrt(R3_6[0,2]**2 + R3_6[2,2]**2), R3_6[1,2])
+            # Choosing between multiple possible solutions:
+            if sin(theta5) < 0:
+                theta4 = atan2(-R3_6[2,2], R3_6[0,2])
+                theta6 = atan2(R3_6[1,1], -R3_6[1,0])
+            else:
+                theta4 = atan2(R3_6[2,2], -R3_6[0,2])
+                theta6 = atan2(-R3_6[1,1], R3_6[1,0])
 
-        print 'Appending calculated values'
-            # Populate response for the IK request
-            # In the next line replace theta1,theta2...,theta6 by your joint angle variables
-        joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
-        joint_trajectory_list.append(joint_trajectory_point)
+            print 'Appending calculated values'
+                # Populate response for the IK request
+                # In the next line replace theta1,theta2...,theta6 by your joint angle variables
+            joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
+            joint_trajectory_list.append(joint_trajectory_point)
 
         rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
         return CalculateIKResponse(joint_trajectory_list)
