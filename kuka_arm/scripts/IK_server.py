@@ -52,50 +52,47 @@ def handle_calculate_IK(req):
         print "No valid poses received"
         return -1
     else:
-
         ### Your FK code here
         # Create symbols
-    print 'Creating symbols'
-    # Joint angle (variable for revolute)
-    q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
-    # Link offset (variable for prismatic)
-    d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
-    # Link length
-    a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
-    # Twist angles
-    alpha0,alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
+        print 'Creating symbols'
+        # Joint angle (variable for revolute)
+        q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
+        # Link offset (variable for prismatic)
+        d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
+        # Link length
+        a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
+        # Twist angles
+        alpha0,alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
 
-    # Create Modified DH parameters
-    DH = {alpha0: 0,      a0: 0,      d1: 0.75,     q1: q1,
-          alpha1: -pi/2,  a1: 0.35,   d2: 0, 	    q2: q2-pi/2,
-          alpha2: 0,      a2: 1.25,   d3: 0,	    q3: q3,
-          alpha3: -pi/2,  a3: 0.0536, d4: 1.5014,   q4: q4,
-          alpha4: pi/2,   a4: 0,      d5: 0,	    q5: q5,
-          alpha5: -pi/2,  a5: 0,      d6: 0,        q6: q6,
-          alpha6: 0,      a6: 0,      d7: 0.303,    q7: 0}
+        # Create Modified DH parameters
+        DH = {alpha0: 0,      a0: 0,      d1: 0.75,     q1: q1,
+              alpha1: -pi/2,  a1: 0.35,   d2: 0, 	    q2: q2-pi/2,
+              alpha2: 0,      a2: 1.25,   d3: 0,	    q3: q3,
+              alpha3: -pi/2,  a3: 0.0536, d4: 1.5014,   q4: q4,
+              alpha4: pi/2,   a4: 0,      d5: 0,	    q5: q5,
+              alpha5: -pi/2,  a5: 0,      d6: 0,        q6: q6,
+              alpha6: 0,      a6: 0,      d7: 0.303,    q7: 0}
 
-    # Define Modified DH Transformation matrix
-    #
-    #
-    # Create individual transformation matrices
-    print 'Creating HTs'
-    T0_1 = homogeneous_transform(q1, d1, a0, alpha0).subs(DH)
-    T1_2 = homogeneous_transform(q2, d2, a1, alpha1).subs(DH)
-    T2_3 = homogeneous_transform(q3, d3, a2, alpha2).subs(DH)
-    T3_4 = homogeneous_transform(q4, d4, a3, alpha3).subs(DH)
-    T4_5 = homogeneous_transform(q5, d5, a4, alpha4).subs(DH)
-    T5_6 = homogeneous_transform(q6, d6, a5, alpha5).subs(DH)
-    T6_G = homogeneous_transform(q7, d7, a6, alpha6).subs(DH)
+        # Define Modified DH Transformation matrix
+        # Create individual transformation matrices
+        print 'Creating HTs'
+        T0_1 = homogeneous_transform(q1, d1, a0, alpha0).subs(DH)
+        T1_2 = homogeneous_transform(q2, d2, a1, alpha1).subs(DH)
+        T2_3 = homogeneous_transform(q3, d3, a2, alpha2).subs(DH)
+        T3_4 = homogeneous_transform(q4, d4, a3, alpha3).subs(DH)
+        T4_5 = homogeneous_transform(q5, d5, a4, alpha4).subs(DH)
+        T5_6 = homogeneous_transform(q6, d6, a5, alpha5).subs(DH)
+        T6_G = homogeneous_transform(q7, d7, a6, alpha6).subs(DH)
 
-    # Extract rotation matrices from the transformation matrices
-    # Generalized homogeneous transform
-    T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
+        # Extract rotation matrices from the transformation matrices
+        # Generalized homogeneous transform
+        T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
 
-    # Correcting difference in orientation between DH convention and URDF file
-    r, p, y = symbols('r p y')
-    R_x = rot_x(r)
-    R_y = rot_y(p)
-    R_z = rot_z(y)
+        # Correcting difference in orientation between DH convention and URDF file
+        r, p, y = symbols('r p y')
+        R_x = rot_x(r)
+        R_y = rot_y(p)
+        R_z = rot_z(y)
 
         # Initialize service response
         joint_trajectory_list = []
